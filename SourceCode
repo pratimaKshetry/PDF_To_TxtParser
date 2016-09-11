@@ -1,0 +1,173 @@
+'''
+Author: Pratima Kshetry
+
+'''
+
+#!/usr/bin/env python
+# coding=UTF-8
+
+import re
+import os
+import sys
+
+# Open the relevant files.
+def main():
+	year = '2011'
+	path = './' + year + '/Files/Reps/'
+	filenames = [
+		filename 
+		for filename
+		in os.listdir(path)
+		if filename.endswith('.txt')
+		]
+	for filename in filenames:
+		print filename
+		if os.path.exists(path + filename + '.txt'):
+			os.remove(path + filename + '.txt')
+		partnerlistprep(filename, path);
+		partnerlist(filename, path);
+		cleanfile(filename, path, year);
+		os.remove(path + filename + '.temp')
+		os.remove(path + filename + '.temp2')
+	return 'Complete!'
+
+def partnerlistprep(filename, path):
+	f = open(path + filename, 'r')
+	out = open(path + filename + '.temp', 'w+')
+	partnerlist=False
+	lnum=0
+	hold=False
+	defense=False
+	hopkins=False
+	columbia=False
+	carolina=False
+	kzn=False
+	for line in f:
+		lnum=lnum+1
+		if line.startswith('Partner List'):
+			out.write(line)
+			partnerlist=True
+		elif partnerlist==True and 'Destinations' in line:
+			out.write(line)
+			partnerlist=False
+		elif partnerlist==True:
+			if hold==False:
+				if line.startswith('Travel') and 'FACTS Info' in line:
+					line='\n'
+				else:
+					out.write(line + '\n POINT\n')
+					hold=False
+		else:
+			out.write(line)
+
+def partnerlist(filename, path):
+	f = open(path + filename + '.temp', 'r')
+	out = open(path + filename + '.temp2', 'w+')
+	partnerlist=False
+	lnum=0
+	x=0
+	hold=False
+	defense=False
+	hopkins=False
+	string=''
+	for line in f:
+		lnum=lnum+1
+		if line.startswith('List'):
+			out.write(line)
+			partnerlist=True
+		elif partnerlist==False:
+			out.write(line)
+		elif partnerlist==True and x==0:
+			x=1
+		elif partnerlist==True and x==1:
+			x=2
+		elif partnerlist==True and x==2:
+			line = '\t ID\t Name\tOrganization Type\t \Source\tDecision\t\n'
+			out.write(line)
+			x=3
+		else:
+				string=string+line
+
+def cleanfile(filename, path, year):
+	f = open(path + filename + '.temp2', 'r')
+	out = open('./' + year + '/' + filename + '.txt', 'w+')
+	#Insert and Introduction header utfto make consistent for purposes of the Parse script.
+	out.write("###  Translation from PDF \n-----------------\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
+	Introduction=True
+	sumagencyheader=False
+	techarea=False
+	parabreak=0
+	x=0
+	azido=0
+	lnum=0
+	for line in f:
+		lnum=lnum+1
+		#Get rid of header/footer lines and odd characters
+		if line.startswith('Custom') and "FACTS Info" in line:
+			line='ignore'
+		elif line.startswith('2012-10') and 'EDT' in line:
+			line='ignore'
+		elif "" in line:
+			line = line.replace('','')
+
+		if line=='ignore':
+			ignore=line
+		elif line=='\n':
+			parabreak=1
+			out.write(line)
+		elif Introduction==True and not line.startswith('Summary of Data'):
+			out.write(line)
+		elif Introduction==True:
+			Introduction=False
+			sumagencyheader=True
+			out.write(line)
+			temp=''
+
+		#Gets the Summary of data for processing
+		elif sumagencyheader==True and not line.startswith('Total'):
+			temp=temp+line
+		elif sumagencyheader==True:
+			sumagencyheader=False
+			temp=temp+line
+			section = sumagency(temp);
+			temp=''
+			out.write(section)
+			
+		#Gets the technical area summary table and sends to techtable() for processing
+		elif line.startswith('Technical Area: '):
+			out.write(line)
+			techarea=True
+			temp=''
+		elif techarea==True and line.startswith('Summary'):
+			section = techtable(temp);
+			out.write(section)
+			out.write(line)
+			temp=''
+			techarea=False
+		elif techarea==True:
+			temp=temp+line
+			
+		
+def techtable(temp):
+	temp=temp.splitlines(True)
+	section='\t Code\tCode \t\n'
+	lnum=0
+	for line in temp:
+		if line=='\n':
+			ignore=line
+		elif line[0]!=' ':
+			line=line.split()
+			section=section+'\t'+line[0]+'\t'+line[1]+'\t\t\n'
+		elif 'Code' in line:
+			ignore=line
+		elif 'Total' in line:
+			empty=line
+		elif 'Testing' in line:
+			return section
+		else:
+			line=line.split()
+			section=section+'\tTotal Technical Area:\t' + line[0] + '\t' + line[1] + '\t\n\n'
+
+if __name__ == '__main__':
+	status = main()
+	sys.exit(status)
