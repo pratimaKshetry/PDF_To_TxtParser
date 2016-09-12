@@ -1,6 +1,6 @@
 Option Explicit
 Option Private Module
-'Author: Pratima Kshetry
+
 Sub SavePDFAsWord(PDFPath As String, FileExtension As String)
       
     'In order to use the macro you must enable the Acrobat library from VBA editor:
