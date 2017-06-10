@@ -1,3 +1,6 @@
+'Author: Pratima Kshetry
+'Email: pratima.kshetry@hotmail.com
+
 Option Explicit
 Option Private Module
 
